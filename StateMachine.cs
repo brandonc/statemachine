@@ -1,0 +1,243 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace StateMachine
+{
+  public class StateMachine<T> where T : struct
+  {
+    class StateInternal
+    {
+      public T State;
+      public List<T> Accept;
+
+      public event Action Enter;
+      public event Action Exit;
+
+      public bool Can(T state)
+      {
+        return Accept.Contains(state);
+      }
+
+      public void OnEnter()
+      {
+        if(Enter != null)
+          Enter();
+      }
+
+      public void OnExit()
+      {
+        if(Exit != null)
+          Exit();
+      }
+
+      public StateInternal(T state)
+      {
+        this.State = state;
+        this.Accept = new List<T>();
+      }
+    }
+
+    class TransitionTable : Dictionary<T, StateInternal>
+    {
+      public StateInternal Add(T from, T to)
+      {
+        StateInternal state;
+        if(!this.TryGetValue(from, out state))
+        {
+          state = new StateInternal(from);
+          this.Add(from, state);
+        }
+
+        state.Accept.Add(to);
+        return state;
+      }
+
+      public override string ToString()
+      {
+        StringBuilder sb = new StringBuilder();
+        foreach(T key in this.Keys) {
+          StateInternal si = this[key];
+          sb.AppendFormat("{0} to [", si.State);
+          bool first = true;
+          foreach(T state in si.Accept) {
+            if(!first)
+              sb.Append(", ");
+            first = false;
+            sb.Append(state);
+          }
+          sb.Append("]");
+          sb.Append(Environment.NewLine);
+        }
+        return sb.ToString();
+      }
+    }
+
+    private T initialState;
+    private StateInternal state;
+    private TransitionTable transitions;
+
+    public T State {
+      get
+      {
+        return state.State;
+      }
+      set
+      {
+        if(!state.Can(value))
+        {
+          throw new ArgumentException(String.Format("Cannot transition from {0} to {1}", state.State, value));
+        }
+        else
+        {
+          state.OnExit();
+          state = transitions[value];
+          state.OnEnter();
+        }
+      }
+    }
+
+    public void Valid(T from, T to)
+    {
+      var si = transitions.Add(from, to);
+
+      if(state == null && from.Equals(initialState))
+      {
+        state = si;
+      }
+    }
+
+    public void Valid(T[] from, T to)
+    {
+      for(int index = 0; index < from.Length; index++) {
+        Valid(from[index], to);
+      }
+    }
+
+    public void Valid(T from, T[] to)
+    {
+      for(int index = 0; index < to.Length; index++) {
+        Valid(from, to[index]);
+      }
+    }
+
+    public void ValidTwoWay(T state1, T state2)
+    {
+      Valid(state1, state2);
+      Valid(state2, state1);
+    }
+
+    public void Enter(T state, Action action)
+    {
+      transitions[state].Enter += action;
+    }
+
+    public void Exit(T state, Action action)
+    {
+      transitions[state].Exit += action;
+    }
+
+    public override string ToString()
+    {
+      return transitions.ToString();
+    }
+
+    public StateMachine(T initial)
+    {
+      this.initialState = initial;
+      this.transitions = new TransitionTable();
+    }
+  }
+
+  public enum Door
+  {
+    Opened,
+    Closed
+  };
+
+  public enum Heater
+  {
+    Toasting,
+    Baking,
+    Off
+  }
+
+  public class ToasterDoor : StateMachine<Door>
+  {
+    public ToasterDoor()
+      : base(Door.Closed)
+    {
+      ValidTwoWay(Door.Closed, Door.Opened);
+
+      Exit(Door.Opened, () => { Console.WriteLine("Door is closing"); });
+      Enter(Door.Opened, () => { Console.WriteLine("Door is opening"); });
+    }
+  }
+
+  public class HeatingElement : StateMachine<Heater>
+  {
+    public HeatingElement()
+      : base(Heater.Off)
+    {
+      Valid(Heater.Off, new [] { Heater.Baking, Heater.Toasting });
+      Valid(new [] { Heater.Toasting, Heater.Baking }, Heater.Off);
+
+      Exit(Heater.Off, () => { Console.WriteLine("Heating Element Warming Up"); });
+      Enter(Heater.Baking, () => { Console.WriteLine("Oven Mode"); });
+      Enter(Heater.Toasting, () => { Console.WriteLine("Toaster Mode"); });
+    }
+  }
+
+  public class ToasterOven
+  {
+    private HeatingElement heater;
+    private ToasterDoor door;
+
+    public int Temperature { get; set; }
+
+    public void Toast()
+    {
+      heater.State = Heater.Toasting;
+    }
+
+    public void Bake(int temp)
+    {
+      Temperature = temp;
+      heater.State = Heater.Baking;
+    }
+
+    public void Open()
+    {
+      door.State = Door.Opened;
+    }
+
+    public void Close()
+    {
+      door.State = Door.Closed;
+    }
+
+    public void Off()
+    {
+      heater.State = Heater.Off;
+    }
+
+    public ToasterOven()
+    {
+      // Initial state
+      heater = new HeatingElement();
+      door = new ToasterDoor();
+    }
+  }
+
+  class Program {
+    static void Main(string[] args)
+    {
+      ToasterOven toaster = new ToasterOven();
+      toaster.Open();
+      toaster.Close();
+      toaster.Bake(300);
+      toaster.Off();
+    }
+  }
+}
+
