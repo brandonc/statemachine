@@ -52,6 +52,11 @@ namespace StateMachine.Tests
             Status.Valid(OrderState.Ordered,   new[] { OrderState.Cancelled, OrderState.Preparing });
             Status.Valid(OrderState.Preparing, OrderState.Shipped);
 
+            Status.Transitions.Enter_Shipped((Action)delegate()
+            {
+                Debug.WriteLine("Order Shipped!");
+            });
+
             // Enter transition events
             Status.DoWhenAny((status) =>
             {

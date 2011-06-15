@@ -58,3 +58,17 @@
             // Or DoFollowingAny() for exit transitions
         }
     }
+
+## Dynamic Events ##
+	
+If you're using .net 4.0, you can use dynamic binding in the style of rails:
+
+	Status.Transitions.Enter_Shipped((Action)delegate()
+    {
+		Debug.WriteLine("Order Shipped!");
+    });
+
+	Status.Transitions.Exit_Ordered((Action)delegate()
+    {
+		Debug.WriteLine("Order Processed!");
+    });
