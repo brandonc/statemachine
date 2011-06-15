@@ -50,15 +50,27 @@ namespace StateMachine
         }
 
         if (!state.Can(to))
-            state.Accept.Add(to);
+          state.Accept.Add(to);
+
+        Add(to);
 
         return state;
       }
+
+      public StateInternal Add(T to)
+      {
+          StateInternal state;
+          if (!this.TryGetValue(to, out state))
+          {
+              state = new StateInternal(to);
+              this.Add(to, state);
+          }
+          return state;
+      }
     }
 
-    private T initialState;
     private StateInternal state;
-    private TransitionTable transitions;
+    private TransitionTable transitionTable;
 
     public T State {
       get
@@ -67,9 +79,6 @@ namespace StateMachine
       }
       set
       {
-        if (state == null)
-            throw new ArgumentException(String.Format("Cannot transition from {0} to {1}", initialState, value));
-
         if (state.State.Equals(value))
             return;
 
@@ -80,7 +89,7 @@ namespace StateMachine
         else
         {
           state.OnExit();
-          state = transitions[value];
+          state = transitionTable[value];
           state.OnEnter();
         }
       }
@@ -91,12 +100,7 @@ namespace StateMachine
       if (from.Equals(to))
         return;
 
-      var si = transitions.Add(from, to);
-
-      if(state == null && from.Equals(initialState))
-      {
-        state = si;
-      }
+      transitionTable.Add(from, to);
     }
 
     public void Valid(T[] from, T to)
@@ -132,12 +136,12 @@ namespace StateMachine
 
     public void DoWhen(T state, Action action)
     {
-      transitions[state].Enter += action;
+      transitionTable[state].Enter += action;
     }
 
     public void DoWhenAny(Action<T> action)
     {
-      foreach (var pair in transitions)
+      foreach (var pair in transitionTable)
       {
           T myval = pair.Key;
           pair.Value.Enter += delegate
@@ -149,12 +153,12 @@ namespace StateMachine
 
     public void DoFollowing(T state, Action action)
     {
-      transitions[state].Exit += action;
+      transitionTable[state].Exit += action;
     }
 
     public void DoFollowingAny(Action<T> action)
     {
-        foreach (var pair in transitions)
+        foreach (var pair in transitionTable)
         {
             T myval = pair.Key;
             pair.Value.Exit += delegate
@@ -166,8 +170,8 @@ namespace StateMachine
 
     public StateMachine(T initial)
     {
-      this.initialState = initial;
-      this.transitions = new TransitionTable();
+      this.transitionTable = new TransitionTable();
+      this.state = this.transitionTable.Add(initial);
     }
   }
 }
