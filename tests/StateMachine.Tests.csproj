@@ -45,7 +45,7 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\StateMachine.cs">
+    <Compile Include="..\StateMachine.cs">
       <Link>StateMachine.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />

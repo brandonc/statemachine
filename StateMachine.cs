@@ -9,7 +9,7 @@ namespace StateMachine
     class StateInternal
     {
       public T State;
-      public List<T> Accept;
+      public HashSet<T> Accept;
 
       public event Action Enter;
       public event Action Exit;
@@ -34,7 +34,7 @@ namespace StateMachine
       public StateInternal(T state)
       {
         this.State = state;
-        this.Accept = new List<T>();
+        this.Accept = new HashSet<T>();
       }
     }
 
