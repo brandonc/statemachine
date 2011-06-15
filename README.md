@@ -17,13 +17,16 @@
         Off
     }
 
+    // StateMachine<T> can be used as a superclass or not.
     public class ToasterDoor : StateMachine<DoorState>
     {
         public ToasterDoor()
             : base(DoorState.Closed) /* initial state */
         {
+            // Both Closed -> Open and Open -> Closed are valid
             ValidTwoWay(DoorState.Closed, DoorState.Opened);
 
+            // Per-state Exit and Enter events
             Exit(DoorState.Opened, () => { Console.WriteLine("Door is closing"); });
             Enter(DoorState.Opened, () => { Console.WriteLine("Door is opening"); });
         }
@@ -34,7 +37,10 @@
         public HeatingElement(ToasterOven toaster)
             : base(HeaterState.Off) /* initial state */
         {
+            // Both Off -> Baking and Off -> Toasting are valid
             Valid(HeaterState.Off, new[] { HeaterState.Baking, HeaterState.Toasting });
+
+            // Both Toasting -> Off and Baking -> Off are valid
             Valid(new[] { HeaterState.Toasting, HeaterState.Baking }, HeaterState.Off);
 
             Exit(HeaterState.Off, () => { Console.WriteLine("Heating Element Warming Up"); });
@@ -80,5 +86,11 @@
         {
             heater = new HeatingElement(this);
             door = new ToasterDoor();
+        }
+
+        public void ThrowsArgumentException()
+        {
+            heater.State = HeaterState.Baking;
+            heater.State = HeaterState.Toasting;
         }
     }
