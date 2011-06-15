@@ -1,8 +1,41 @@
-# statemachine
+﻿using System;
+using System.Text;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-> A simple, templated state machine class for c#
+namespace StateMachine.Tests
+{
+    [TestClass]
+    public class ToasterOvenTests
+    {
+        private ToasterOven toaster = new ToasterOven();
 
-## Example ##
+        [TestMethod]
+        public void CanOpenClose()
+        {
+            toaster.Open();
+            toaster.Close();
+            toaster.Open();
+            toaster.Open(); // Nothing should happen.
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void CantToastAndBake()
+        {
+            toaster.Bake(300);
+            toaster.Toast();
+        }
+
+        [TestMethod]
+        public void CanTurnOff()
+        {
+            toaster.Off();
+            toaster.Toast();
+            toaster.Off();
+        }
+    }
 
     public enum DoorState
     {
@@ -82,3 +115,4 @@
             door = new ToasterDoor();
         }
     }
+}

@@ -52,25 +52,6 @@ namespace StateMachine
         state.Accept.Add(to);
         return state;
       }
-
-      public override string ToString()
-      {
-        StringBuilder sb = new StringBuilder();
-        foreach(T key in this.Keys) {
-          StateInternal si = this[key];
-          sb.AppendFormat("{0} to [", si.State);
-          bool first = true;
-          foreach(T state in si.Accept) {
-            if(!first)
-              sb.Append(", ");
-            first = false;
-            sb.Append(state);
-          }
-          sb.Append("]");
-          sb.Append(Environment.NewLine);
-        }
-        return sb.ToString();
-      }
     }
 
     private T initialState;
@@ -84,6 +65,12 @@ namespace StateMachine
       }
       set
       {
+        if (state == null)
+            throw new ArgumentException(String.Format("Cannot transition from {0} to {1}", initialState, value));
+
+        if (state.State.Equals(value))
+            return;
+
         if(!state.Can(value))
         {
           throw new ArgumentException(String.Format("Cannot transition from {0} to {1}", state.State, value));
