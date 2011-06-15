@@ -49,6 +49,7 @@
       <Link>StateMachine.cs</Link>
     </Compile>
     <Compile Include="FinalStateTests.cs" />
+    <Compile Include="OrderTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ToasterOvenTests.cs" />
   </ItemGroup>

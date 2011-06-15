@@ -1,9 +1,13 @@
-# statemachine
+﻿using System;
+using System.Text;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.IO;
+using System.Diagnostics;
 
-> A simple, templated state machine class for c#
-
-## Example ##
-
+namespace StateMachine.Tests
+{
     public enum OrderState
     {
         Created,
@@ -58,3 +62,35 @@
             // Or DoFollowingAny() for exit transitions
         }
     }
+
+    [TestClass]
+    public class OrderTests
+    {
+        [TestMethod]
+        public void CanCancelOrder()
+        {
+            Order o = new Order();
+            o.Complete();
+            o.Cancel();
+        }
+
+        [TestMethod]
+        public void CanShipOrder()
+        {
+            Order o = new Order();
+            o.Complete();
+            o.Prepare();
+            o.Ship();
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void CannotCancelPreparedOrder()
+        {
+            Order o = new Order();
+            o.Complete();
+            o.Prepare();
+            o.Cancel();
+        }
+    }
+}
