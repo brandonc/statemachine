@@ -3,6 +3,7 @@ using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Diagnostics;
 
 namespace StateMachine.Tests
 {
@@ -14,26 +15,35 @@ namespace StateMachine.Tests
         [TestMethod]
         public void CanOpenClose()
         {
+            WakeUpInTheMorning();
             toaster.Open();
             toaster.Close();
+            WakeUpInTheMorning();
             toaster.Open();
             toaster.Open(); // Nothing should happen.
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentException))]
-        public void CantToastAndBake()
+        public void CannotToastAndBake()
         {
+            WakeUpInTheMorning();
             toaster.Bake(300);
             toaster.Toast();
         }
 
         [TestMethod]
-        public void CanTurnOff()
+        public void CanTurnOnOff()
         {
+            WakeUpInTheMorning();
             toaster.Off();
             toaster.Toast();
             toaster.Off();
+        }
+
+        public void WakeUpInTheMorning()
+        {
+            toaster.Sunrise();
         }
     }
 
@@ -57,8 +67,8 @@ namespace StateMachine.Tests
         {
             ValidTwoWay(DoorState.Closed, DoorState.Opened);
 
-            Exit(DoorState.Opened, () => { Console.WriteLine("Door is closing"); });
-            Enter(DoorState.Opened, () => { Console.WriteLine("Door is opening"); });
+            DoFollowing(DoorState.Opened, () => { Debug.WriteLine("Door is closing"); });
+            DoWhen(DoorState.Opened, () => { Debug.WriteLine("Door is opening"); });
         }
     }
 
@@ -70,9 +80,21 @@ namespace StateMachine.Tests
             Valid(HeaterState.Off, new[] { HeaterState.Baking, HeaterState.Toasting });
             Valid(new[] { HeaterState.Toasting, HeaterState.Baking }, HeaterState.Off);
 
-            Exit(HeaterState.Off, () => { Console.WriteLine("Heating Element Warming Up"); });
-            Enter(HeaterState.Baking, () => { Console.WriteLine("Oven Mode: " + toaster.Temperature + " degrees"); });
-            Enter(HeaterState.Toasting, () => { Console.WriteLine("Toaster Mode"); });
+            DoFollowing(HeaterState.Off, () => { Debug.WriteLine("Heating Element Warming Up"); });
+            DoWhenAny((mode) => {
+                switch (mode)
+                {
+                    case HeaterState.Baking:
+                        Debug.WriteLine("Baking at " + toaster.Temperature + " degrees");
+                        break;
+                    case HeaterState.Toasting:
+                        Debug.WriteLine("Toasting");
+                        break;
+                    default:
+                        // NOP
+                        break;
+                }
+            });
         }
     }
 
@@ -80,6 +102,7 @@ namespace StateMachine.Tests
     {
         private HeatingElement heater;
         private ToasterDoor door;
+        private StateMachine<DayOfWeek> today;
 
         public int Temperature { get; set; }
 
@@ -109,10 +132,21 @@ namespace StateMachine.Tests
             heater.State = HeaterState.Off;
         }
 
+        public void Sunrise()
+        {
+            if (today.State == DayOfWeek.Saturday)
+                today.State = DayOfWeek.Sunday;
+            else
+                today.State = (DayOfWeek)(int)today.State + 1;
+        }
+
         public ToasterOven()
         {
             heater = new HeatingElement(this);
             door = new ToasterDoor();
+            today = new StateMachine<DayOfWeek>(DayOfWeek.Monday);
+            today.ValidAny();
+            today.DoWhenAny((dow) => { Debug.WriteLine("Good morning! Today is " + dow); });
         }
     }
 }

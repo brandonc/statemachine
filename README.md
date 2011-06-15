@@ -27,25 +27,41 @@
             ValidTwoWay(DoorState.Closed, DoorState.Opened);
 
             // Per-state Exit and Enter events
-            Exit(DoorState.Opened, () => { Console.WriteLine("Door is closing"); });
-            Enter(DoorState.Opened, () => { Console.WriteLine("Door is opening"); });
+            DoWhen(DoorState.Opened, () => { Console.WriteLine("Door is closing"); });
+            DoFollowing(DoorState.Opened, () => { Console.WriteLine("Door is opening"); });
         }
     }
 
     public class HeatingElement : StateMachine<HeaterState>
     {
+		private ToasterOven toaster;
+
         public HeatingElement(ToasterOven toaster)
             : base(HeaterState.Off) /* initial state */
         {
+			this.toaster = toaster;
+
             // Both Off -> Baking and Off -> Toasting are valid
             Valid(HeaterState.Off, new[] { HeaterState.Baking, HeaterState.Toasting });
 
             // Both Toasting -> Off and Baking -> Off are valid
             Valid(new[] { HeaterState.Toasting, HeaterState.Baking }, HeaterState.Off);
 
-            Exit(HeaterState.Off, () => { Console.WriteLine("Heating Element Warming Up"); });
-            Enter(HeaterState.Baking, () => { Console.WriteLine("Oven Mode: " + toaster.Temperature + " degrees"); });
-            Enter(HeaterState.Toasting, () => { Console.WriteLine("Toaster Mode"); });
+            DoFollowing(HeaterState.Off, () => { Console.WriteLine("Heating Element Warming Up"); });
+            DoWhenAny((mode) => {
+                switch (mode)
+                {
+                    case HeaterState.Baking:
+                        Debug.WriteLine("Baking at " + toaster.Temperature + " degrees");
+                        break;
+                    case HeaterState.Toasting:
+                        Debug.WriteLine("Toasting");
+                        break;
+                    default:
+                        // NOP
+                        break;
+                }
+            });
         }
     }
 

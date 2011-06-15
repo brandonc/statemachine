@@ -49,7 +49,9 @@ namespace StateMachine
           this.Add(from, state);
         }
 
-        state.Accept.Add(to);
+        if (!state.Can(to))
+            state.Accept.Add(to);
+
         return state;
       }
     }
@@ -86,6 +88,9 @@ namespace StateMachine
 
     public void Valid(T from, T to)
     {
+      if (from.Equals(to))
+        return;
+
       var si = transitions.Add(from, to);
 
       if(state == null && from.Equals(initialState))
@@ -114,19 +119,49 @@ namespace StateMachine
       Valid(state2, state1);
     }
 
-    public void Enter(T state, Action action)
+    public void ValidAny()
+    {
+      Type typeT = typeof(T);
+      if (!typeT.IsEnum)
+        throw new InvalidOperationException("T must be an enum.");
+
+      foreach (T state1 in Enum.GetValues(typeT))
+        foreach (T state2 in Enum.GetValues(typeT))
+          ValidTwoWay(state1, state2);
+    }
+
+    public void DoWhen(T state, Action action)
     {
       transitions[state].Enter += action;
     }
 
-    public void Exit(T state, Action action)
+    public void DoWhenAny(Action<T> action)
+    {
+      foreach (var pair in transitions)
+      {
+          T myval = pair.Key;
+          pair.Value.Enter += delegate
+          {
+              action(myval);
+          };
+      }
+    }
+
+    public void DoFollowing(T state, Action action)
     {
       transitions[state].Exit += action;
     }
 
-    public override string ToString()
+    public void DoFollowingAny(Action<T> action)
     {
-      return transitions.ToString();
+        foreach (var pair in transitions)
+        {
+            T myval = pair.Key;
+            pair.Value.Exit += delegate
+            {
+                action(myval);
+            };
+        }
     }
 
     public StateMachine(T initial)
