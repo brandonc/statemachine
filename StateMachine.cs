@@ -25,6 +25,8 @@ using System.Dynamic;
 
 namespace StateMachine
 {
+    public class WhateverDude {
+    }
     public class StateMachine<T> where T : struct
     {
         class StateInternal
