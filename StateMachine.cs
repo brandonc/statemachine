@@ -26,6 +26,7 @@ using System.Dynamic;
 namespace StateMachine
 {
     public class WhateverDude {
+    	public const string YeahRight = "Yeah, Right!";
     }
     public class StateMachine<T> where T : struct
     {
